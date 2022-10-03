@@ -1,34 +1,87 @@
 package com.epam.rd.java.basic.topic05.task03;
 
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 public class Task {
 
-	private int numberOfThreads;
+    private int numberOfThreads;
+    private int numberOfIterations;
+    private int pause;
+    private int c1;
+    private int c2;
 
-	private int numberOfIterations;
+    private Thread[] threads;
 
-	private int pause;
+    public Task(int numberOfThreads, int numberOfIterations, int pause) {
+        this.numberOfThreads = numberOfThreads;
+        this.numberOfIterations = numberOfIterations;
+        this.pause = pause;
+        threads = new Thread[numberOfThreads];
+        c1 = numberOfThreads;
+        c2 = numberOfIterations;
 
-	private int c1;
+    }
 
-	private int c2;
+    public void compare() {
+        for (int i = 0; i < numberOfThreads; i++) {
+            threads[i] = new Thread(this::calculate);
+            threads[i].start();
+        }
+        waiting();
+    }
 
-	public Task(int numberOfThreads, int numberOfIterations, int pause) {
-		
-	}
+    public void compareSync() {
+        for (int i = 0; i < numberOfThreads; i++) {
+            threads[i] = new Thread(() -> {
+                synchronized (this) {
+                    calculate();
+                }
+            });
+            threads[i].start();
+        }
+        waiting();
+    }
 
-	public void compare() {
-		
-	}
 
-	public void compareSync() {
+    public static void main(String[] args) {
+        Task t = new Task(2, 5, 10);
+        t.compare();
+        System.out.println("~~~");
+        t.compareSync();
+    }
 
-	}
-	
-	public static void main(String[] args) {
-		Task t = new Task(2, 5, 10);
-		t.compare();
-		System.out.println("~~~");
-		t.compareSync();
-	}
+    private void calculate() {
+        c1 = 0;
+        c2 = 0;
+        for (int j = 0; j < numberOfIterations; j++) {
+            System.out.println((c1 == c2) + " " + c1 + " " + c2);
+            c1++;
+            try {
+                Thread.sleep(pause);
+            } catch (InterruptedException e) {
+                Logger.getLogger(Task.class.getName()).log(Level.SEVERE, null, e);
+                Thread.currentThread().interrupt();
+            }
+            c2++;
+        }
+
+
+    }
+
+    private void waiting() {
+        for (Thread t : threads) {
+            try {
+                t.join();
+            } catch (InterruptedException e) {
+                Logger.getLogger(Task.class.getName()).log(Level.SEVERE, null, e);
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
 
 }
